@@ -70,7 +70,7 @@ jobs:
           name: MFCA-win-${{ matrix.arch }}
           path: "install"
     outputs:
-      maa_framework_tag: ${{ steps.download_maa_framework.outputs.tag }}
+      maa_framework_tag: ${{ steps.download_maa_framework.outputs.tag_name}}
 
   ubuntu:
     runs-on: ubuntu-latest
