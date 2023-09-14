@@ -218,6 +218,7 @@ jobs:
       - uses: softprops/action-gh-release@v1
         if: ${{ github.event_name == 'schedule'}}
         with:
+          prerelease: true
           files: assets/*
           tag_name: ${{ github.run_number }}
           body: |
