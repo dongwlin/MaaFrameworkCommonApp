@@ -211,7 +211,7 @@ jobs:
           files: assets/*
           tag_name: ${{ github.run_number }}
 
-      - name: 生成日期
+      - name: Generation Date
         run: |
           echo "DATE=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
 
@@ -229,5 +229,5 @@ jobs:
         if: ${{ github.event_name != 'schedule'}}
         with:
           files: assets/*
-          tag_name: ${{ github.run_number }} - ${{ env.DATE }}
+          tag_name: ${{ github.run_number }}.${{ env.DATE }}
           
