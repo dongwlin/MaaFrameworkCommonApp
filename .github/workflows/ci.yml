@@ -45,6 +45,7 @@ jobs:
           python3 .github/update_resource_version.py assets/resource/properties.json ${{ github.run_number }}
 
       - name: Download MaaFramework
+        id: download_maa_framework
         uses: robinraju/release-downloader@v1.8
         with:
           repository: MaaAssistantArknights/MaaFramework
@@ -203,17 +204,12 @@ jobs:
       - run: |
           cd assets
           for f in *; do
-            (cd $f && zip -r ../$f-${{ github.run_number }}.zip .)
+            (cd $f && zip -r ../$f-${{ github.run_number }}.${{ env.DATE }}-MaaFramework-v${{steps.download_maa_framework.outputs.tag_name}}.zip .)
           done
-      - uses: softprops/action-gh-release@v1
-        if: ${{ github.event_name != 'schedule'}}
-        with:
-          files: assets/*
-          tag_name: ${{ github.run_number }}
 
       - name: Generation Date
         run: |
-          echo "DATE=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+          echo "DATE=$(date +'%Y%m.%d%H%M%S')" >> $GITHUB_ENV
 
       - uses: softprops/action-gh-release@v1
         if: ${{ github.event_name == 'schedule'}}
