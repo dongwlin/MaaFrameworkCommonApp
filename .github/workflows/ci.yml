@@ -69,6 +69,8 @@ jobs:
         with:
           name: MFCA-win-${{ matrix.arch }}
           path: "install"
+    outputs:
+      maa_framework_tag: ${{ steps.download_maa_framework.outputs.tag }}
 
   ubuntu:
     runs-on: ubuntu-latest
@@ -198,18 +200,18 @@ jobs:
     needs: [ windows, ubuntu, macos]
     runs-on: ubuntu-latest
     steps:
+      - name: Generation Date
+        run: |
+          echo "DATE=$(date +'%Y%m.%d%H%M%S')" >> $GITHUB_ENV
+
       - uses: actions/download-artifact@v3
         with:
           path: assets
       - run: |
           cd assets
           for f in *; do
-            (cd $f && zip -r ../$f-${{ github.run_number }}.${{ env.DATE }}-MaaFramework-v${{steps.download_maa_framework.outputs.tag_name}}.zip .)
+            (cd $f && zip -r ../$f-${{ github.run_number }}.${{ env.DATE }}-MaaFramework-${{needs.windows.outputs.maa_framework_tag}}.zip .)
           done
-
-      - name: Generation Date
-        run: |
-          echo "DATE=$(date +'%Y%m.%d%H%M%S')" >> $GITHUB_ENV
 
       - uses: softprops/action-gh-release@v1
         if: ${{ github.event_name == 'schedule'}}
