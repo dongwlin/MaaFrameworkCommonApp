@@ -1,8 +1,5 @@
 name: build cli
 
-permissions:
-  contents: write
-
 on:
   push:
     tags:
@@ -26,53 +23,12 @@ on:
       - 'cmake/**'
       - 'CMakelists.txt'
       - 'CMakePresets.json'
+  schedule:
+    - cron: '30 18 * * *'
   workflow_dispatch:
 
 jobs:
-  meta:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - id: set_tag
-        run: |
-          is_release=${{ startsWith(github.ref, 'refs/tags/v') }}
-          tag=$(git describe --tags --match "v*" ${{ github.ref }} || true)
-          if [[ $tag != v* ]]; then
-            tag=$(curl -sX GET "https://api.github.com/repos/MaaAssistantArknights/MaaFramework/releases/latest" --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' | awk '/tag_name/{print $4}' FS='["]')
-            if [[ $tag != v* ]]; then
-              tag="v0.0.0"
-            fi
-            tag=$(date "+$tag-%y%m%d-$(git rev-parse --short HEAD)")
-          fi
-          if ! $($is_release) ; then
-            prefix=${tag%-*-*}
-            suffix=${tag#$prefix-}
-            tag="$prefix-ci.$suffix"
-          fi
-
-          echo tag=$tag | tee -a $GITHUB_OUTPUT
-          echo is_release=$is_release | tee -a $GITHUB_OUTPUT
-      
-      - if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        run: |
-          this_tag=${{ steps.set_tag.outputs.tag }}
-          last_tag=$(git describe --tags --match "v*" --abbrev=0 --exclude='${{ steps.set_tag.outputs.tag }}')
-          echo >> CHANGELOG.md
-          echo "**Full Changelog**: [$last_tag -> $this_tag](https://github.com/MaaAssistantArknights/MAABH3/compare/${last_tag}...${this_tag})" >> CHANGELOG.md
-
-      - uses: actions/upload-artifact@v3
-        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        with:
-          name: changelog
-          path: CHANGELOG.md
-    outputs:
-      tag: ${{ steps.set_tag.outputs.tag }}
-      is_release: ${{ steps.set_tag.outputs.is_release }}
-
   windows:
-    needs: meta
     runs-on: windows-latest
     strategy:
       matrix:
@@ -86,7 +42,7 @@ jobs:
 
       - name: Update resource version
         run: |
-          python3 .github/update_resource_version.py assets/resource/properties.json ${{ needs.meta.outputs.tag }}
+          python3 .github/update_resource_version.py assets/resource/properties.json ${{ github.run_number }}
 
       - name: Download MaaFramework
         uses: robinraju/release-downloader@v1.8
@@ -97,9 +53,9 @@ jobs:
           out-file-path: "deps"
           extract: true
 
-      - name: Build MAABH3
+      - name: Build MFCA
         run: |
-          cmake --preset "${{ matrix.arch == 'x86_64' && 'MSVC 2022' || 'MSVC 2022 ARM' }}" -DMAABH3_HASH_VERSION='${{ needs.meta.outputs.tag }}'
+          cmake --preset "${{ matrix.arch == 'x86_64' && 'MSVC 2022' || 'MSVC 2022 ARM' }}" -DMFCA_HASH_VERSION='${{ github.run_number }}'
 
           cmake --build build --config Release -j 16
 
@@ -110,11 +66,10 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: MAABH3-win-${{ matrix.arch }}
+          name: MFCA-win-${{ matrix.arch }}
           path: "install"
 
   ubuntu:
-    needs: meta
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     strategy:
@@ -151,7 +106,7 @@ jobs:
 
       - name: Update resource version
         run: |
-          python3 .github/update_resource_version.py assets/resource/properties.json ${{ needs.meta.outputs.tag }}
+          python3 .github/update_resource_version.py assets/resource/properties.json ${{ github.run_number }}
 
       - name: Download MaaFramework
         uses: robinraju/release-downloader@v1.8
@@ -162,13 +117,13 @@ jobs:
           out-file-path: "deps"
           extract: true
 
-      - name: Build MAABH3
+      - name: Build MFCA
         env:
           CC: ${{ matrix.arch == 'x86_64' && 'ccache gcc' || 'ccache aarch64-linux-gnu-gcc' }}
           CXX: ${{ matrix.arch == 'x86_64' && 'ccache g++' || 'ccache aarch64-linux-gnu-g++' }}
         run: |
           cmake --preset 'NinjaMulti' \
-            -DMAABH3_HASH_VERSION='${{ needs.meta.outputs.tag }}'
+            -DMFCA_HASH_VERSION='${{ github.run_number }}'
 
           cmake --build build --config Release -j 16
 
@@ -179,11 +134,10 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: MAABH3-linux-${{ matrix.arch }}
+          name: MFCA-linux-${{ matrix.arch }}
           path: "install"
 
   macos:
-    needs: meta
     runs-on: macos-latest
     strategy:
       matrix:
@@ -207,7 +161,7 @@ jobs:
 
       - name: Update resource version
         run: |
-          python3 .github/update_resource_version.py assets/resource/properties.json ${{ needs.meta.outputs.tag }}
+          python3 .github/update_resource_version.py assets/resource/properties.json ${{ github.run_number }}
 
       - name: Download MaaFramework
         uses: robinraju/release-downloader@v1.8
@@ -218,14 +172,14 @@ jobs:
           out-file-path: "deps"
           extract: true
 
-      - name: Build MAABH3
+      - name: Build MFCA
         env:
           CC: "/usr/local/opt/llvm/bin/clang"
           CXX: "/usr/local/opt/llvm/bin/clang++"
         run: |
           cmake --preset 'NinjaMulti' \
             -DARCH='${{ matrix.arch == 'x86_64' && 'x64' || 'arm64' }}' \
-            -DMAABH3_HASH_VERSION='${{ needs.meta.outputs.tag }}'
+            -DMFCA_HASH_VERSION='${{ github.run_number }}'
 
           cmake --build build --config Release -j 16
 
@@ -236,26 +190,43 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: MAABH3-macos-${{ matrix.arch }}
+          name: MFCA-macos-${{ matrix.arch }}
           path: "install"
 
   release:
-    if: ${{ needs.meta.outputs.is_release == 'true' }}
-    needs: [meta, windows, ubuntu, macos]
+    needs: [ windows, ubuntu, macos]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v3
         with:
           path: assets
       - run: |
-          mv -vf assets/changelog/* .
-          rm -rf assets/changelog
           cd assets
           for f in *; do
-            (cd $f && zip -r ../$f-${{ needs.meta.outputs.tag }}.zip .)
+            (cd $f && zip -r ../$f-${{ github.run_number }}.zip .)
           done
       - uses: softprops/action-gh-release@v1
+        if: ${{ github.event_name != 'schedule'}}
         with:
-          body_path: CHANGELOG.md
           files: assets/*
-          tag_name: ${{ needs.meta.outputs.tag }}
+          tag_name: ${{ github.run_number }}
+
+      - name: echo date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d %H:%M:%S')"
+
+      - uses: softprops/action-gh-release@v1
+        if: ${{ github.event_name == 'schedule'}}
+        with:
+          files: assets/*
+          tag_name: ${{ github.run_number }}
+          body: |
+            This is an automatic release triggered by the scheduled workflow.
+            Release date: ${{ steps.date.outputs.date }}
+
+      - uses: softprops/action-gh-release@v1
+        if: ${{ github.event_name != 'schedule'}}
+        with:
+          files: assets/*
+          tag_name: ${{ github.run_number }}
+          
