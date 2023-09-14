@@ -220,7 +220,7 @@ jobs:
         with:
           prerelease: true
           files: assets/*
-          tag_name: ${{ github.run_number }} - ${{ env.DATE }}
+          tag_name: ${{ github.run_number }}.${{ env.DATE }}
           body: |
             This is an automatic release triggered by the scheduled workflow.
             Release date: ${{ env.DATE }}
