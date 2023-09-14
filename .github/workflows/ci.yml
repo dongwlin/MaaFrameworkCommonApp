@@ -211,23 +211,23 @@ jobs:
           files: assets/*
           tag_name: ${{ github.run_number }}
 
-      - name: echo date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d %H:%M:%S')"
+      - name: 生成日期
+        run: |
+          echo "DATE=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
 
       - uses: softprops/action-gh-release@v1
         if: ${{ github.event_name == 'schedule'}}
         with:
           prerelease: true
           files: assets/*
-          tag_name: ${{ github.run_number }}
+          tag_name: ${{ github.run_number }} - ${{ env.DATE }}
           body: |
             This is an automatic release triggered by the scheduled workflow.
-            Release date: ${{ steps.date.outputs.date }}
+            Release date: ${{ env.DATE }}
 
       - uses: softprops/action-gh-release@v1
         if: ${{ github.event_name != 'schedule'}}
         with:
           files: assets/*
-          tag_name: ${{ github.run_number }}
+          tag_name: ${{ github.run_number }} - ${{ env.DATE }}
           
