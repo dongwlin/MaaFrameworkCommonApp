@@ -196,36 +196,36 @@ jobs:
           name: MFCA-macos-${{ matrix.arch }}
           path: "install"
 
-  release:
-    needs: [ windows, ubuntu, macos]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Generation Date
-        run: |
-          echo "DATE=$(date +'%Y%m.%d%H%M%S')" >> $GITHUB_ENV
+  # release:
+  #   needs: [ windows, ubuntu, macos]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Generation Date
+  #       run: |
+  #         echo "DATE=$(date +'%Y%m.%d%H%M%S')" >> $GITHUB_ENV
 
-      - uses: actions/download-artifact@v3
-        with:
-          path: assets
-      - run: |
-          cd assets
-          for f in *; do
-            (cd $f && zip -r ../$f-${{ github.run_number }}.${{ env.DATE }}-MaaFramework-${{needs.windows.outputs.maa_framework_tag}}.zip .)
-          done
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         path: assets
+  #     - run: |
+  #         cd assets
+  #         for f in *; do
+  #           (cd $f && zip -r ../$f-${{ github.run_number }}.${{ env.DATE }}-MaaFramework-${{needs.windows.outputs.maa_framework_tag}}.zip .)
+  #         done
 
-      - uses: softprops/action-gh-release@v1
-        if: ${{ github.event_name == 'schedule'}}
-        with:
-          prerelease: true
-          files: assets/*
-          tag_name: ${{ github.run_number }}.${{ env.DATE }}
-          body: |
-            This is an automatic release triggered by the scheduled workflow.
-            Release date: ${{ env.DATE }}
+  #     - uses: softprops/action-gh-release@v1
+  #       if: ${{ github.event_name == 'schedule'}}
+  #       with:
+  #         prerelease: true
+  #         files: assets/*
+  #         tag_name: ${{ github.run_number }}.${{ env.DATE }}
+  #         body: |
+  #           This is an automatic release triggered by the scheduled workflow.
+  #           Release date: ${{ env.DATE }}
 
-      - uses: softprops/action-gh-release@v1
-        if: ${{ github.event_name != 'schedule'}}
-        with:
-          files: assets/*
-          tag_name: ${{ github.run_number }}.${{ env.DATE }}
+  #     - uses: softprops/action-gh-release@v1
+  #       if: ${{ github.event_name != 'schedule'}}
+  #       with:
+  #         files: assets/*
+  #         tag_name: ${{ github.run_number }}.${{ env.DATE }}
           
