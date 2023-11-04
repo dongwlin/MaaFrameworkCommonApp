@@ -47,7 +47,7 @@ int main(int argc, char** argv)
     std::string adb_config = MaaToolKitGetDeviceAdbConfig(kIndex);
 
     MaaSetGlobalOption(MaaGlobalOption_LogDir, (void*)debug_dir.c_str(), debug_dir.size());
-    MaaSetGlobalOption(MaaGlobalOption_DebugMode, (void*)&debug, sizeof(bool));
+    MaaSetGlobalOption(MaaGlobalOption_Recording, (void*)&debug, sizeof(bool));
 
     auto maa_handle = MaaCreate(nullptr, nullptr);
     auto resource_handle = MaaResourceCreate(nullptr, nullptr);
